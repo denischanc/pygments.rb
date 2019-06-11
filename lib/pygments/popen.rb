@@ -302,18 +302,14 @@ module Pygments
       return if @err.closed?
 
       timeout_time = 0.25 # set a very little timeout so that we do not hang the parser
-
-      Timeout::timeout(timeout_time) do
+      if IO.select([@err], [], [], timeout_time) != nil
         error_msg = @err.read
 
-        unless error_msg.empty?
-          @log.error "Error running python script: #{error_msg}"
-          stop "Error running python script: #{error_msg}"
-          raise MentosError, error_msg
-        end
+        @log.error "Error running python script: #{error_msg}"
+        stop "Error running python script: #{error_msg}"
+        raise MentosError, error_msg
       end
-    rescue Timeout::Error
-      # during the specified time no error were found
+
       @err.close
     end
 
